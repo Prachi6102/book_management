@@ -1,0 +1,3 @@
+1 . Error Handling
+2 . validations using joi/yup
+3 . Register , login , forgot password , change password
