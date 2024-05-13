@@ -1,13 +1,13 @@
-import express from "express";
-import routes from '../routes';
+import express from 'express'
+import routes from '../routes'
 
-const app = express();
+const app = express()
 
-app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({ extended: false }))
 
-app.use(express.json());
+app.use(express.json())
 
 // routes
-app.use('/', routes);
+app.use('/', routes)
 
-export default app;
+export default app

@@ -1,7 +1,7 @@
-import { Document } from 'mongoose';
+import { Document } from 'mongoose'
 
 export interface IUser extends Document {
-    name: string;
-    password: string;
-    role: string;
+  name: string
+  password: string
+  role: string
 }

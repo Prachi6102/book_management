@@ -1,5 +1,5 @@
 export interface userToken {
-    name: string,
-    u_id: string,
-    role: string
+  name: string
+  u_id: string
+  role: string
 }
