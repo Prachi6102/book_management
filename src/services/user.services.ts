@@ -3,11 +3,14 @@ import jwt, { JwtPayload } from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
 import { IUser } from '../interface'
 import { UserQueries } from '../queries'
-import  {SUCCESS_MSG , ERROR_MSG } from '../constants/messages'
+import { SUCCESS_MSG, ERROR_MSG } from '../constants/messages'
+import crypto from 'crypto'
+import nodemailer from 'nodemailer'
 // const blacklistedTokens: string[] = []
 
 dotenv.config()
 
+const PORT: number = parseInt(process.env.PORT || '3000')
 const SECRET_KEY: string = process.env.SECRET_KEY || ''
 
 const userQueries = new UserQueries()
@@ -16,7 +19,7 @@ export class UserServices {
   async getUsers(): Promise<IUser[]> {
     const Users = await userQueries.getUsers()
     if (Users.length == 0) {
-      throw new Error(ERROR_MSG.NO_CONTENT('User'));
+      throw new Error(ERROR_MSG.NO_CONTENT('User'))
     } else {
       return Users
     }
@@ -33,6 +36,7 @@ export class UserServices {
 
   async addUser(
     name: string,
+    email: string,
     password: string,
     role: string
   ): Promise<IUser | string> {
@@ -45,32 +49,19 @@ export class UserServices {
       const saltRounds = 10
       const hashedPassword = await bcrypt.hash(password, saltRounds)
       password = hashedPassword
-      const user: IUser = await userQueries.createUser(name, password, role)
+      const user: IUser = await userQueries.createUser(
+        name,
+        email,
+        password,
+        role
+      )
       return user
     }
   }
 
-  // async updateUser(id: string, name: string, password: string, role: string): Promise<IUser | string> {
-  //     const existingUser: IUser | null = await userQueries.findByName(name);
-  //     if (existingUser) {
-  //         return "User with this name already exists!!";
-  //     } else {
-  //         const saltRounds = 10;
-  //         const hashedPassword = await bcrypt.hash(password, saltRounds);
-  //         password = hashedPassword;
-  //         const updatedUser: IUser | null = await userQueries.updateUser(id, name, password, role);
-  //         if (!updatedUser) {
-  //             return "User not found!";
-  //         } else {
-  //             return updatedUser;
-  //         }
-  //     }
-  // }
-
   async updateUser(
     id: string,
     name: string,
-    password: string,
     role: string
   ): Promise<IUser | string> {
     const existingUser: IUser | null = await userQueries.getUserById(id)
@@ -78,7 +69,6 @@ export class UserServices {
       return 'User not found!'
     } else {
       let updatedName = existingUser.name
-      let updatedPassword = existingUser.password
 
       if (name !== existingUser.name) {
         // Check if the new name is already taken
@@ -90,15 +80,9 @@ export class UserServices {
         updatedName = name
       }
 
-      if (password) {
-        const saltRounds = 10
-        updatedPassword = await bcrypt.hash(password, saltRounds)
-      }
-
       const updatedUser: IUser | null = await userQueries.updateUser(
         id,
         updatedName,
-        updatedPassword,
         role
       )
       if (!updatedUser) {
@@ -151,8 +135,96 @@ export class UserServices {
     }
   }
 
-  // async logoutUser(): Promise<string> {
-  //     localStorage.removeItem('token');
-  //     return "User logged out successfully!!"
-  // }
+  async changePassword(
+    id: string,
+    password: string,
+    confirmPassword: string
+  ): Promise<string | undefined> {
+    if (password && confirmPassword) {
+      if (password !== confirmPassword) {
+        return "New Password and Confirm New Password doesn't match"
+      } else {
+        const saltRounds = 10
+        const hashedPassword = await bcrypt.hash(password, saltRounds)
+        password = hashedPassword
+        await userQueries.findByIdAndUpdatePassword(id, password)
+        return 'Password changed successfully!!'
+      }
+    } else {
+      return 'All fields are required!!'
+    }
+  }
+
+  async forgotPassword(email: string): Promise<string> {
+    const user = await userQueries.findByEmail(email)
+    if (!user) {
+      return 'User with this email does not exist!!'
+    }
+
+    const token = crypto.randomBytes(20).toString('hex')
+
+    user.resetPasswordToken = token
+    user.resetPasswordExpires = new Date(Date.now() + 3600000) //1 hour
+    await user.save()
+
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_FROM,
+        pass: process.env.EMAIL_PASSWORD
+      }
+    })
+
+    const mailOptions = {
+      to: user.email,
+      from: process.env.EMAIL_FROM,
+      subject: 'Password Reset',
+      text: `You are receiving this because you (or someone else) have requested the reset of the password for your account.\n\n
+      Please click on the following link, or paste this into your browser to complete the process:\n\n
+      http://localhost:${PORT}/reset-password/${token}\n\n
+      If you did not request this, please ignore this email and your password will remain unchanged.\n`
+    }
+
+    await transporter.sendMail(mailOptions)
+
+    console.log('mail sent')
+
+    return 'Password reset mail sent'
+  }
+
+  async resetPassword(token: string, password: string): Promise<string> {
+    const user: IUser | null = await userQueries.findUserByToken(token)
+    if (!user) {
+      return 'Password reset token is invalid or has expired'
+    }
+    const saltRounds = 10
+    user.password = await bcrypt.hash(password, saltRounds)
+    user.resetPasswordToken = undefined
+    user.resetPasswordExpires = undefined
+    await user.save()
+
+    return 'Password has been reset'
+  }
 }
+
+// async logoutUser(): Promise<string> {
+//     localStorage.removeItem('token');
+//     return "User logged out successfully!!"
+// }
+
+// async updateUser(id: string, name: string, password: string, role: string): Promise<IUser | string> {
+//     const existingUser: IUser | null = await userQueries.findByName(name);
+//     if (existingUser) {
+//         return "User with this name already exists!!";
+//     } else {
+//         const saltRounds = 10;
+//         const hashedPassword = await bcrypt.hash(password, saltRounds);
+//         password = hashedPassword;
+//         const updatedUser: IUser | null = await userQueries.updateUser(id, name, password, role);
+//         if (!updatedUser) {
+//             return "User not found!";
+//         } else {
+//             return updatedUser;
+//         }
+//     }
+// }

@@ -8,6 +8,12 @@ const UserSchema: Schema<IUser> = new Schema<IUser>(
       required: [true, 'Please enter user name!']
     },
 
+    email: {
+      type: String,
+      required: true,
+      unique: true
+    },
+
     password: {
       type: String,
       required: true
@@ -16,6 +22,14 @@ const UserSchema: Schema<IUser> = new Schema<IUser>(
     role: {
       type: String,
       required: true
+    },
+
+    resetPasswordToken: {
+      type: String
+    },
+
+    resetPasswordExpires: {
+      type: Date
     }
   },
   {

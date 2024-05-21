@@ -11,7 +11,12 @@ router.post('/signup', controller.addUser)
 
 router.post('/login', controller.loginUser)
 
-// router.post('/logout', controller.logoutUser);
+router.post('/forgot-password', controller.forgotPassword)
+
+router.post('/reset-password/:token', controller.resetPassword)
+
+//change password
+router.post('/change-password', authUser, controller.changePassword)
 
 //update User
 router.put('/users', authUser, controller.updateUser)
