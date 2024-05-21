@@ -3,7 +3,8 @@ import jwt, { JwtPayload } from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
 import { IUser } from '../interface'
 import { UserQueries } from '../queries'
-const blacklistedTokens: string[] = []
+import  {SUCCESS_MSG , ERROR_MSG } from '../constants/messages'
+// const blacklistedTokens: string[] = []
 
 dotenv.config()
 
@@ -12,10 +13,10 @@ const SECRET_KEY: string = process.env.SECRET_KEY || ''
 const userQueries = new UserQueries()
 
 export class UserServices {
-  async getUsers(): Promise<IUser[] | string> {
+  async getUsers(): Promise<IUser[]> {
     const Users = await userQueries.getUsers()
     if (Users.length == 0) {
-      return 'No users found!!'
+      throw new Error(ERROR_MSG.NO_CONTENT('User'));
     } else {
       return Users
     }

@@ -5,7 +5,8 @@ const ERROR_MSG = {
   INVALID_PASSWORD: 'Password Invalid!!',
   NO_USER_WITH_ROLE: 'No user found with this role!!',
   NAME_TAKEN: (entity: string) =>
-    `${entity} is not available. Try different name.`
+    `${entity} is not available. Try different name.`,
+  NO_CONTENT: (entity: string) => `There is not any ${entity}` 
 }
 
 const SUCCESS_MSG = {

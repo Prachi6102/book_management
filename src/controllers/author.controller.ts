@@ -1,5 +1,5 @@
 import { Request, Response } from 'express'
-import { IAuthor, AuthenticatedRequest } from '../interface'
+import { IAuthor } from '../interface'
 import { AuthorServices } from '../services'
 
 const services = new AuthorServices()
